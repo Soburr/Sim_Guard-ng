@@ -49,4 +49,8 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function monitoredSims(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MonitoredSim::class);
+    }
 }
