@@ -41,4 +41,10 @@ return [
          'payment_url' => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
     ],
 
+    'vtpass' => [
+        'base_url' => env('VTPASS_BASE_URL', 'https://sandbox.vtpass.com/api'),
+        'api_key' => env('VTPASS_API_KEY'),
+        'secret_key' => env('VTPASS_SECRET_KEY'),
+    ],
+
 ];
