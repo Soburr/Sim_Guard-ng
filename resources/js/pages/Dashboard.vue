@@ -1,18 +1,42 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AddSimModal from '@/components/AddSimModal.vue';
+import FundWalletModal from '@/components/FundWalletModal.vue';
 import SimVaultCard from '@/components/SimVaultCard.vue';
+import WalletOverviewCard from '@/components/WalletOverviewCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import type { BankConfig, MonitoredSim } from '@/types/simguard';
+import type {
+    BankConfig,
+    MonitoredSim,
+    WalletSummary,
+    WalletTransactionItem,
+} from '@/types/simguard';
 
-const props = defineProps<{
-    sims: MonitoredSim[];
-    availableBanks: Record<string, BankConfig>;
-    hasEmergencyPhone: boolean;
-}>();
+const props = withDefaults(
+    defineProps<{
+        sims?: MonitoredSim[];
+        availableBanks?: Record<string, BankConfig>;
+        hasEmergencyPhone?: boolean;
+        wallet?: WalletSummary;
+        transactions?: WalletTransactionItem[];
+    }>(),
+    {
+        sims: () => [],
+        availableBanks: () => ({}),
+        hasEmergencyPhone: false,
+        wallet: () => ({ balance_kobo: 0, topup_cost_kobo: 10000 }),
+        transactions: () => [],
+    },
+);
+
+const page = usePage();
+const flash = computed(
+    () => (page.props.flash as { success?: string; error?: string } | undefined) ?? {},
+);
 
 const showAddModal = ref(false);
+const showFundModal = ref(false);
 
 const keepAliveCount = computed(() => props.sims.filter((s) => s.mode === 'keep_alive').length);
 const watchdogCount = computed(() => props.sims.filter((s) => s.mode === 'watchdog').length);
@@ -26,6 +50,20 @@ const compromisedCount = computed(
 
     <AppLayout>
         <div class="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+            <!-- Flash Notifications (Paystack Callback / SIM Actions) -->
+            <div
+                v-if="flash.success"
+                class="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-900"
+            >
+                {{ flash.success }}
+            </div>
+            <div
+                v-if="flash.error"
+                class="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-xs font-semibold text-red-900"
+            >
+                {{ flash.error }}
+            </div>
+
             <!-- Missing Emergency Phone Warning -->
             <div
                 v-if="!hasEmergencyPhone"
@@ -60,6 +98,14 @@ const compromisedCount = computed(
                     + Add SIM Card
                 </button>
             </div>
+
+            <!-- Wallet Overview & Ledger -->
+            <WalletOverviewCard
+                :wallet="wallet"
+                :transactions="transactions"
+                :keep-alive-count="keepAliveCount"
+                @fund="showFundModal = true"
+            />
 
             <!-- KPI Summary Strip -->
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -123,5 +169,7 @@ const compromisedCount = computed(
             :available-banks="availableBanks"
             @close="showAddModal = false"
         />
+
+        <FundWalletModal :open="showFundModal" @close="showFundModal = false" />
     </AppLayout>
 </template>

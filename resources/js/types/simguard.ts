@@ -32,3 +32,18 @@ export interface MonitoredSim {
     last_probe_at: string | null;
     bank_links: SimBankLink[];
 }
+
+export interface WalletSummary {
+    balance_kobo: number;
+    topup_cost_kobo: number;
+}
+
+export interface WalletTransactionItem {
+    id: number;
+    reference: string;
+    type: 'credit' | 'debit';
+    amount_kobo: number;
+    description: string;
+    status: 'pending' | 'success' | 'failed';
+    created_at: string;
+}

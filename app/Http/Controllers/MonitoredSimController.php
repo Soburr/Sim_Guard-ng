@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMonitoredSimRequest;
 use App\Models\MonitoredSim;
+use App\Models\WalletTransaction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,8 +16,10 @@ class MonitoredSimController extends Controller
 {
     public function index(Request $request): Response
     {
-        $sims = $request->user()
-            ->monitoredSims()
+        $user = $request->user();
+        $wallet = $user->getOrCreateWallet();
+
+        $sims = $user->monitoredSims()
             ->with('bankLinks')
             ->latest()
             ->get()
@@ -34,10 +37,29 @@ class MonitoredSimController extends Controller
                 'bank_links' => $sim->bankLinks,
             ]);
 
+        $transactions = $wallet->transactions()
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(fn (WalletTransaction $tx) => [
+                'id' => $tx->id,
+                'reference' => $tx->reference,
+                'type' => $tx->type,
+                'amount_kobo' => $tx->amount_kobo,
+                'description' => $tx->description,
+                'status' => $tx->status,
+                'created_at' => $tx->created_at->format('M j, Y · g:i A'),
+            ]);
+
         return Inertia::render('Dashboard', [
             'sims' => $sims,
             'availableBanks' => config('nigerian_banks'),
-            'hasEmergencyPhone' => filled($request->user()->emergency_phone),
+            'hasEmergencyPhone' => filled($user->emergency_phone),
+            'wallet' => [
+                'balance_kobo' => $wallet->balance_kobo,
+                'topup_cost_kobo' => 10000,
+            ],
+            'transactions' => $transactions,
         ]);
     }
 

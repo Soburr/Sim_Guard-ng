@@ -53,4 +53,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(MonitoredSim::class);
     }
+
+    public function wallet(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function getOrCreateWallet(): Wallet
+    {
+        return $this->wallet()->firstOrCreate([], ['balance_kobo' => 0]);
+    }   
 }
